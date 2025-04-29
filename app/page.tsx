@@ -1,7 +1,7 @@
 import Greeting from "@/components/dashboard/Greeting";
+import RecentPurchased from "@/components/dashboard/RecentPurchased";
 import ShoppingListOverView from "@/components/dashboard/ShoppingListOverview";
 import StoreRecommonendation from "@/components/dashboard/StoreRecommendations";
-import Link from "next/link";
 
 export default function Dashboard() {
   return (
@@ -12,6 +12,7 @@ export default function Dashboard() {
         <ShoppingListOverView />
         <StoreRecommonendation />
       </div>
+      <RecentPurchased />
     </>
   );
 }
