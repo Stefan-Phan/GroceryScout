@@ -26,9 +26,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${roboto.className} overflow-y-scroll scrollbar-hide`}>
+      <body
+        className={`${roboto.className} overflow-y-scroll scrollbar-hide bg-gray-50`}
+      >
         <Navbar />
-        <main className="max-w-6xl mx-auto px-12 py-4">{children}</main>
+        <main className="max-w-6xl mx-auto px-12 py-4 ">{children}</main>
       </body>
     </html>
   );
