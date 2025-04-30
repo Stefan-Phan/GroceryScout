@@ -1,24 +1,28 @@
 import { useState, useRef, useEffect } from "react";
 
 // import type
-import { Task } from "@/types/Task";
+import { Item } from "@/types/Item";
 
 // import icon
 import { TrashIcon } from "@heroicons/react/24/outline";
 
-interface TaskItemProps {
-  task: Task;
+interface ShoppingItemProps {
+  item: Item;
   onDelete: (id: string) => void;
   onUpdate: (id: string, newText: string) => void;
 }
 
-export default function TaskItem({ task, onDelete, onUpdate }: TaskItemProps) {
+export default function ShoppingItem({
+  item,
+  onDelete,
+  onUpdate,
+}: ShoppingItemProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editText, setEditText] = useState(task.text);
+  const [editText, setEditText] = useState(item.text);
 
   const handleEditSubmit = () => {
     if (editText.trim()) {
-      onUpdate(task.id, editText);
+      onUpdate(item.id, editText);
     }
     setIsEditing(false);
   };
@@ -27,7 +31,7 @@ export default function TaskItem({ task, onDelete, onUpdate }: TaskItemProps) {
     if (e.key === "Enter") {
       handleEditSubmit();
     } else if (e.key === "Espace") {
-      setEditText(task.text);
+      setEditText(item.text);
       setIsEditing(false);
     }
   };
@@ -48,7 +52,7 @@ export default function TaskItem({ task, onDelete, onUpdate }: TaskItemProps) {
             className="w-full cursor-pointer hover:text-gray-700"
             onClick={() => setIsEditing(true)}
           >
-            {task.text}
+            {item.text}
           </div>
         )}
       </div>
@@ -56,7 +60,7 @@ export default function TaskItem({ task, onDelete, onUpdate }: TaskItemProps) {
       <div className="flex space-x-4">
         <button
           className="text-red-600 hover:text-red-800 cursor-pointer"
-          onClick={() => onDelete(task.id)}
+          onClick={() => onDelete(item.id)}
         >
           <TrashIcon className="h-5 w-5" />
         </button>

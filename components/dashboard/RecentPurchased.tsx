@@ -1,13 +1,13 @@
 "use client";
 
 // import type
-import { Item } from "@/types/Item";
+import { Grocery } from "@/types/Grocery";
 
 // import component
 import ItemCard from "../ItemCard";
 
 // mock data
-const products: Item[] = [
+const products: Grocery[] = [
   {
     id: "1",
     name: "Chicken Sandwich Schnitzel",

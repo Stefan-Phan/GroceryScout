@@ -1,10 +1,10 @@
 "use client";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 
 // import type
-import { Task } from "@/types/Task";
-import TaskItem from "@/components/shopping-list/TaskItem";
+import { Item } from "@/types/Item";
+import TaskItem from "@/components/shopping-list/ShoppingItem";
 
 // import icons
 import { BanknotesIcon } from "@heroicons/react/24/outline";
@@ -13,7 +13,7 @@ import AddItemModal from "@/components/shopping-list/AddItemModal";
 
 export default function Page() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [tasks, setTasks] = useState<Task[]>([
+  const [items, setItems] = useState<Item[]>([
     { id: "1", text: "White Rice" },
     { id: "2", text: "Tomato Paste" },
     { id: "3", text: "Pasta" },
@@ -22,13 +22,13 @@ export default function Page() {
   ]);
 
   const handleDeleteTask = (id: string) => {
-    setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
+    setItems((prevItems) => prevItems.filter((item) => item.id !== id));
   };
 
   const handleUpdateTask = (id: string, newText: string) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === id ? { ...task, text: newText } : task
+    setItems((prevItems) =>
+      prevItems.map((item) =>
+        item.id === id ? { ...item, text: newText } : item
       )
     );
   };
@@ -39,11 +39,11 @@ export default function Page() {
 
   const handleAddItem = (newItemText: string) => {
     if (newItemText.trim()) {
-      const newItem: Task = {
+      const newItem: Item = {
         id: uuidv4(),
         text: newItemText.trim(),
       };
-      setTasks((preTasks) => [...preTasks, newItem]);
+      setItems((prevItems) => [...prevItems, newItem]);
     }
     closeModal();
   };
@@ -56,10 +56,10 @@ export default function Page() {
         </h1>
 
         {/* Task rows */}
-        {tasks.map((task) => (
+        {items.map((item) => (
           <TaskItem
-            key={task.id}
-            task={task}
+            key={item.id}
+            item={item}
             onDelete={handleDeleteTask}
             onUpdate={handleUpdateTask}
           />

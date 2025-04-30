@@ -1,4 +1,4 @@
-import { Item } from "@/types/Item";
+import { Item } from "@/types/Grocery";
 
 export default function ItemCard({
   id,
