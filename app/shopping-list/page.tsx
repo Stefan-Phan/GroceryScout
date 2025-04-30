@@ -10,20 +10,24 @@ import TaskItem from "@/components/shopping-list/ShoppingItem";
 import { BanknotesIcon } from "@heroicons/react/24/outline";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import AddItemModal from "@/components/shopping-list/AddItemModal";
+import { OptimizedItem } from "@/types/OptimizedItem";
 
-const intialItems: Item[] = [
+const initialItems: Item[] = [
   { id: "1", text: "White Rice" },
   { id: "2", text: "Tomato Paste" },
   { id: "3", text: "Pasta" },
   { id: "4", text: "Chicken" },
-  { id: "5", text: "Ground Beef" },
+  { id: "5", text: "Sauce" },
 ];
 
 export default function Page() {
-  const prompt =
-    "Interpret this search (White Rice, tomato paste, peanut butter, pizza, container) and give me keywords to look up in Woolworths or Coles. Just give me the answer no need to explain like chicken: chicken -> ...";
+  const prompt = `You are an assistant that helps optimize grocery search terms for Woolworths and Coles. Interpret the following JSON array of items and generate simplified and effective keywords for each item to search on Woolworths and Coles. Format the response as an array of objects with: id, wooliesKeyword, colesKeyword. Items: ${JSON.stringify(
+    initialItems,
+    null,
+    2
+  )}`;
 
-  const [output, setOutput] = useState("This is a nextjs project");
+  const [optimizedItems, setOptimizedItems] = useState<OptimizedItem[]>([]);
 
   const generateText = async () => {
     try {
@@ -38,18 +42,27 @@ export default function Page() {
       const data = await response.json();
 
       if (response.ok) {
-        setOutput(data.output || "No response received");
-      } else {
-        setOutput(data.error || "An error occurred");
+        try {
+          const cleanedOutput = data.output
+            ?.replace(/^```(?:json\n)?/, "") // Remove optional ```json\n at the beginning
+            .replace(/```$/, "") // Remove ``` at the end
+            .replace(/^json\s*/i, "") // Remove "json" (case-insensitive) and any following whitespace at the beginning
+            .trim();
+          const parsed: OptimizedItem[] = JSON.parse(cleanedOutput);
+
+          setOptimizedItems(parsed);
+        } catch (e) {
+          console.error("Failed to parse optimized items", e);
+          setOptimizedItems([]);
+        }
       }
     } catch (error) {
       console.error(error);
-      setOutput("Failed to fetch response");
     }
   };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [items, setItems] = useState<Item[]>(intialItems);
+  const [items, setItems] = useState<Item[]>(initialItems);
 
   const handleDeleteItem = (id: string) => {
     setItems((prevItems) => prevItems.filter((item) => item.id !== id));
@@ -121,10 +134,28 @@ export default function Page() {
             onAddItem={handleAddItem}
           />
         )}
-        <div className="mt-4 p-4 border rounded-lg">
-          <h2 className="font-semibold mb-2">Gemini API Response:</h2>
-          <p>{output}</p>
-        </div>
+        {optimizedItems.length > 0 && (
+          <div className="overflow-x-auto mt-6">
+            <table className="min-w-full text-sm text-left border border-gray-300 rounded-lg">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="px-4 py-2 border-b">Woolworths Keyword</th>
+                  <th className="px-4 py-2 border-b">Coles Keyword</th>
+                </tr>
+              </thead>
+              <tbody>
+                {optimizedItems.map((item) => (
+                  <tr key={item.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-2 border-b">
+                      {item.wooliesKeyword}
+                    </td>
+                    <td className="px-4 py-2 border-b">{item.colesKeyword}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
