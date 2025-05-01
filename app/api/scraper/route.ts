@@ -66,42 +66,71 @@ export async function POST(request: Request) {
           timeout: 30000,
         });
 
-        // Wait for product tiles to load (adjust selector and timeout if needed)
-        await wooliesPage.waitForSelector("shared-product-tile", {
-          timeout: 10000,
+        let myCards = null;
+        const productCount = await wooliesPage.evaluate(() => {
+          const productCards = document.querySelectorAll("shared-product-tile");
+          myCards = productCards;
+          console.log("Inside evaluate - myCards:", myCards);
+          return {
+            count: productCards.length,
+            cards: Array.from(productCards).map((card) => ({
+              // Convert to serializable
+              tagName: card.tagName,
+              className: card.className,
+            })),
+          };
         });
 
+        console.log(" myCards:", productCount.cards);
+        console.log(`Found ${productCount.count} products`);
+
         const wooliesProducts = await wooliesPage.evaluate(() => {
-          const productCards = document.querySelectorAll("ng-tns-c865356747-4");
-          console.log(productCards.length);
+          const productCards = document.querySelectorAll("shared-product-tile");
+
           return Array.from(productCards).map((card) => {
-            const nameElement = card.querySelector(".shelfProductTile-title");
+            // Extract product name
+            const nameElement = card.querySelector(".title a");
+            const name = nameElement ? nameElement.textContent?.trim() : null;
+
+            // Extract price - primary price display
             const priceElement = card.querySelector(
               ".product-tile-price > .primary"
             );
-            const imageElement = card.querySelector("img");
-            const linkElement = card.querySelector("a");
+            const price = priceElement
+              ? priceElement.textContent?.trim()
+              : null;
+
+            // Extract image
+            const imageElement = card.querySelector(".product-tile-image img");
+            const image = imageElement
+              ? imageElement.getAttribute("src")
+              : null;
+
+            // Extract price per unit (if available)
+            const pricePerUnitElement = card.querySelector(".price-per-cup");
+            const pricePerUnit = pricePerUnitElement
+              ? pricePerUnitElement.textContent?.trim()
+              : null;
 
             return {
-              name:
-                nameElement?.textContent?.trim() || "Product Name Unavailable",
-              price: priceElement?.textContent?.trim() || "Price Unavailable",
-              image: imageElement?.getAttribute("src") || "",
-              link: (linkElement as HTMLAnchorElement)?.href || "#",
+              name,
+              price,
+              image,
+              pricePerUnit,
             };
           });
         });
 
-        // console.log("Woolworths Products:", wooliesProducts);
+        console.log(wooliesProducts);
 
-        allProducts.push(
-          ...wooliesProducts.map((p) => ({
-            ...p,
-            keyword: wooliesKeyword,
-            id,
-            store: "Woolies",
-          }))
-        );
+        // allProducts.push(
+        //   ...wooliesProducts.map((p) => ({
+        //     ...p,
+        //     keyword: wooliesKeyword,
+        //     id,
+        //     store: "Woolies",
+        //   }))
+        // );
 
         await wooliesPage.close();
       } catch (wooliesError) {
