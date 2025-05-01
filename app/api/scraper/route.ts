@@ -35,14 +35,14 @@ export async function POST(request: Request) {
     for (const item of keywords) {
       const { id, wooliesKeyword, colesKeyword } = item;
 
-      // Fetch from Woolworths
+      // --- Woolworths Scraping ---
       try {
         const wooliesPage = await browser.newPage();
 
+        // Configure user agent and headers for a more realistic request
         await wooliesPage.setUserAgent(
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36"
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
         );
-
         await wooliesPage.setExtraHTTPHeaders({
           "Accept-Language": "en-US,en;q=0.9",
           Accept:
@@ -52,25 +52,33 @@ export async function POST(request: Request) {
           "Upgrade-Insecure-Requests": "1",
         });
 
+        // Introduce a small random delay before navigating
         await new Promise((resolve) =>
-          setTimeout(resolve, 1000 + Math.random() * 2000)
+          setTimeout(resolve, 1000 + Math.random() * 1500)
         );
 
-        await wooliesPage.goto(
-          `https://www.woolworths.com.au/shop/search/products?searchTerm=${wooliesKeyword}`,
-          {
-            waitUntil: "networkidle2",
-            timeout: 30000,
-          }
-        );
+        const wooliesSearchUrl = `https://www.woolworths.com.au/shop/search/products?searchTerm=${encodeURIComponent(
+          wooliesKeyword
+        )}`;
+        console.log(`Fetching Woolworths: ${wooliesSearchUrl}`);
+        await wooliesPage.goto(wooliesSearchUrl, {
+          waitUntil: "networkidle2",
+          timeout: 30000,
+        });
 
-        console.log("Hey");
+        // Wait for product tiles to load (adjust selector and timeout if needed)
+        await wooliesPage.waitForSelector("shared-product-tile", {
+          timeout: 10000,
+        });
 
         const wooliesProducts = await wooliesPage.evaluate(() => {
-          const productCards = document.querySelectorAll(".shelfProductTile");
+          const productCards = document.querySelectorAll("ng-tns-c865356747-4");
+          console.log(productCards.length);
           return Array.from(productCards).map((card) => {
             const nameElement = card.querySelector(".shelfProductTile-title");
-            const priceElement = card.querySelector(".shelfProductTile-price");
+            const priceElement = card.querySelector(
+              ".product-tile-price > .primary"
+            );
             const imageElement = card.querySelector("img");
             const linkElement = card.querySelector("a");
 
@@ -84,7 +92,7 @@ export async function POST(request: Request) {
           });
         });
 
-        console.log(wooliesProducts);
+        // console.log("Woolworths Products:", wooliesProducts);
 
         allProducts.push(
           ...wooliesProducts.map((p) => ({
@@ -97,27 +105,42 @@ export async function POST(request: Request) {
 
         await wooliesPage.close();
       } catch (wooliesError) {
-        console.log(
+        console.error(
           `Error scraping Woolworths for "${wooliesKeyword}":`,
           wooliesError
         );
       }
 
-      // Fetch from Coles
+      // --- Coles Scraping ---
       // try {
       //   const colesPage = await browser.newPage();
 
-      //   await colesPage.goto(
-      //     `https://www.coles.com.au/search/products?q=${encodeURIComponent(
-      //       colesKeyword
-      //     )}`,
-      //     {
-      //       waitUntil: "domcontentloaded",
-      //       timeout: 30000,
-      //     }
+      //   // Configure user agent and headers
+      //   await colesPage.setUserAgent(
+      //     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
       //   );
+      //   await colesPage.setExtraHTTPHeaders({
+      //     "Accept-Language": "en-US,en;q=0.9",
+      //     Accept:
+      //       "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+      //     "Accept-Encoding": "gzip, deflate, br",
+      //     Connection: "keep-alive",
+      //     "Upgrade-Insecure-Requests": "1",
+      //   });
 
-      //   await new Promise((resolve) => setTimeout(resolve, 2000));
+      //   await new Promise((resolve) => setTimeout(resolve, 1500 + Math.random() * 1500));
+
+      //   const colesSearchUrl = `https://www.coles.com.au/search/products?q=${encodeURIComponent(
+      //     colesKeyword
+      //   )}`;
+      //   console.log(`Fetching Coles: ${colesSearchUrl}`);
+      //   await colesPage.goto(colesSearchUrl, {
+      //     waitUntil: "domcontentloaded",
+      //     timeout: 30000,
+      //   });
+
+      //   // Wait for product tiles to load (adjust selector and timeout if needed)
+      //   await colesPage.waitForSelector(".product-tile", { timeout: 10000 });
 
       //   const colesProducts = await colesPage.evaluate(() => {
       //     const productCards = document.querySelectorAll(".product-tile");
@@ -137,6 +160,8 @@ export async function POST(request: Request) {
       //     });
       //   });
 
+      //   console.log("Coles Products:", colesProducts);
+
       //   allProducts.push(
       //     ...colesProducts.map((p) => ({
       //       ...p,
@@ -148,7 +173,7 @@ export async function POST(request: Request) {
 
       //   await colesPage.close();
       // } catch (colesError) {
-      //   console.log(`Error scraping Coles for "${colesKeyword}":`, colesError);
+      //   console.error(`Error scraping Coles for "${colesKeyword}":`, colesError);
       // }
     }
 
@@ -163,10 +188,14 @@ export async function POST(request: Request) {
       const priceB = b.numericPrice === undefined ? Infinity : b.numericPrice;
       return priceA - priceB;
     });
-    console.log(sortedProducts);
+
     return Response.json(sortedProducts);
   } catch (error) {
-    console.log("Scraping error", error);
+    console.error("Scraping error:", error);
+    return new Response(JSON.stringify({ error: "Scraping failed" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   } finally {
     await browser.close();
   }
