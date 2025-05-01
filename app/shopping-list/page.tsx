@@ -28,6 +28,7 @@ export default function Page() {
   )}`;
 
   const [optimizedItems, setOptimizedItems] = useState<OptimizedItem[]>([]);
+  const [result, setResults] = useState<object>();
 
   const generateText = async () => {
     try {
@@ -51,6 +52,7 @@ export default function Page() {
           const parsed: OptimizedItem[] = JSON.parse(cleanedOutput);
 
           setOptimizedItems(parsed);
+          // handleOnClick();
         } catch (e) {
           console.error("Failed to parse optimized items", e);
           setOptimizedItems([]);
@@ -60,6 +62,17 @@ export default function Page() {
       console.error(error);
     }
   };
+
+  async function handleOnClick() {
+    const results = await fetch("api/scaper", {
+      method: "POST",
+      body: JSON.stringify({
+        siteUrl: "https://spacejelly.dev",
+      }),
+    }).then((r) => r.json());
+
+    setResults(results);
+  }
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [items, setItems] = useState<Item[]>(initialItems);
@@ -119,7 +132,8 @@ export default function Page() {
           </button>
           <button
             type="button"
-            onClick={generateText}
+            // onClick={generateText}
+            onClick={handleOnClick}
             className="flex gap-2 items-center text-white bg-emerald-700 hover:bg-emerald-900  font-medium rounded-lg text-sm px-8 py-2.5 cursor-pointer transition mb-6"
           >
             <BanknotesIcon className="h-6 w-6" />
@@ -154,6 +168,13 @@ export default function Page() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+        {result && (
+          <div className="grid">
+            <pre className="bg-zinc-200 text-left py-4 px-5 rounded overflow-x-scroll">
+              <code>{JSON.stringify(result, undefined, 2)}</code>
+            </pre>
           </div>
         )}
       </div>
