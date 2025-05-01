@@ -9,8 +9,8 @@ export async function POST(req) {
     const data = await req.json();
     const prompt = data.body;
     const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const output = await response.text();
+    const response = result.response;
+    const output = response.text();
 
     return NextResponse.json({ output: output });
   } catch (error) {
